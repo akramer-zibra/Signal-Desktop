@@ -96,18 +96,6 @@ class RenderResolver {
 
     // Call render string end return rendered JSX
     return this.renderString(`GroupV2--create--${suffix}`, this.i18n, components);
-
-    /*    
-    if (fromYou) {
-      return this.renderString('GroupV2--create--you', this.i18n);
-    }
-    if (from) {
-      return this.renderString('GroupV2--create--other', this.i18n, {
-        memberName: this.renderContact(from),
-      });
-    }
-    return this.renderString('GroupV2--create--unknown', this.i18n);
-    */
   }
 
   /** Call group title changed render function */
