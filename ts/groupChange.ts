@@ -725,6 +725,6 @@ export function renderChangeDetail(
 
   // default case
   } else {
-    throw missingCaseError(detail);
+    throw missingCaseError(<never>detail);
   }
 }

@@ -1,0 +1,31 @@
+
+dist: xenial
+
+services:
+  - xvfb
+
+language: node_js
+node_js: '12.13.0'
+
+env:
+  global:
+    - ELECTRON_CACHE=$HOME/.cache/electron
+    - ELECTRON_BUILDER_CACHE=$HOME/.cache/electron-builder
+
+cache:
+  yarn: true
+  directories:
+    - $HOME/.cache/electron
+    - $HOME/.cache/electron-builder
+    - $HOME/.npm/_prebuilds
+
+before_cache:
+  - rm -rf $HOME/.cache/electron-builder/wine;
+
+install:
+  - yarn install --frozen-lockfile
+  - yarn grunt
+  - yarn build:webpack
+
+script:
+  - yarn ready
