@@ -7,7 +7,7 @@ import { ReplacementValuesType } from './types/I18N';
 import { missingCaseError } from './util/missingCaseError';
 
 import { AccessControlClass, MemberClass } from './textsecure.d';
-import { GroupV2ChangeDetailType, GroupV2ChangeType } from './groups';
+import { GroupV2ChangeDetailType, GroupV2ChangeType, GroupV2TitleChangeType } from './groups';
 
 export type SmartContactRendererType = (conversationId: string) => FullJSXType;
 export type StringRendererType = (
@@ -69,6 +69,7 @@ class RenderResolver {
 
     // 
     if(detail.type === "create") { return this.groupCreated(from, fromYou); }
+    if(detail.type === "title") { return this.groupTitleChanged(detail, from, fromYou); }
 
     // Else throw an error
     throw new Error("Cannot resolve this")
@@ -107,6 +108,39 @@ class RenderResolver {
     }
     return this.renderString('GroupV2--create--unknown', this.i18n);
     */
+  }
+
+  /** Call group title changed render function */
+  protected groupTitleChanged (detail: GroupV2TitleChangeType, from: string|undefined, fromYou: Boolean) {
+
+    const { newTitle } = detail;
+
+    // Resolve from suffix
+    var suffix = 'unknown';
+    if(fromYou) {
+      suffix = 'you';
+    } else if(from) {
+      suffix = 'other';
+    }
+
+    // Resolve mode
+    var mode = (newTitle) ? 'change' : 'remove';
+
+    // Resolve optional components
+    var components = undefined;
+    if(newTitle) {
+      components = [newTitle]
+    } else if(newTitle && fromYou) {
+      components = [newTitle]      
+    } else if(newTitle && from) {
+      components = {
+        memberName: this.renderContact(from),
+        newTitle,
+      }
+    }
+
+    // Call render function and return rendered JSX
+    return this.renderString(`GroupV2--title--${mode}--${suffix}`, this.i18n, components);
   }
 }
 
@@ -151,6 +185,7 @@ export function renderChangeDetail(
   }
   */
 
+  /*
   // Group title changed
   if (detail.type === 'title') {
     const { newTitle } = detail;
@@ -177,6 +212,7 @@ export function renderChangeDetail(
     }
     return renderString('GroupV2--title--remove--unknown', i18n);
   }
+  */
 
   // Group avatar removed or changed
   if (detail.type === 'avatar') {
