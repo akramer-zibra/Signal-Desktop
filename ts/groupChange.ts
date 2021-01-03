@@ -40,6 +40,77 @@ export function renderChange(
   );
 }
 
+/**
+ * This class resolves given context and parameters to a certain template function call with 
+ * additional components
+ */
+class RenderResolver {
+
+  private renderString: Function;
+  private renderContact: Function;
+  private i18n: LocalizerType;
+
+  /** Constructor */
+  constructor(renderString: Function, 
+              renderContact: Function,
+              i18n: LocalizerType) {
+    this.renderString = renderString;
+    this.renderContact = renderContact;
+    this.i18n = i18n;
+  } 
+
+  /** Resolves function call by given detail and context arguments */
+  public resolve(detail: GroupV2ChangeDetailType,
+                 from: string|undefined,
+                 ourConversationId: string) {
+
+    // Helper variable
+    const fromYou = Boolean(from && from === ourConversationId);
+
+    // 
+    if(detail.type === "create") { return this.groupCreated(from, fromYou); }
+
+    // Else throw an error
+    throw new Error("Cannot resolve this")
+  }
+
+  /** Call group created render function */
+  protected groupCreated (from: string|undefined, fromYou: Boolean) {
+
+    // Resolve id suffix
+    var suffix = 'unknown';
+    if(fromYou) {
+      suffix = 'you';
+    } else if(from) {
+      suffix = 'other';
+    }
+
+    // Resolve optional components
+    var components = undefined;
+    if(from) {
+      components = {
+        memberName: this.renderContact(from)
+      }
+    }
+
+    // Call render string end return rendered JSX
+    return this.renderString(`GroupV2--create--${suffix}`, this.i18n, components);
+
+    /*    
+    if (fromYou) {
+      return this.renderString('GroupV2--create--you', this.i18n);
+    }
+    if (from) {
+      return this.renderString('GroupV2--create--other', this.i18n, {
+        memberName: this.renderContact(from),
+      });
+    }
+    return this.renderString('GroupV2--create--unknown', this.i18n);
+    */
+  }
+}
+
+
 export function renderChangeDetail(
   detail: GroupV2ChangeDetailType,
   options: RenderOptionsType
@@ -55,6 +126,18 @@ export function renderChangeDetail(
   } = options;
   const fromYou = Boolean(from && from === ourConversationId);
 
+  // We use a resolver instance
+  var resolver = new RenderResolver(renderString, renderContact, i18n);
+
+  // Try to resolve a render function and return call result
+  try {
+    return resolver.resolve(detail, from, ourConversationId);
+  } catch(err) {
+    // Dont care and go on..
+  }
+
+  /*
+  // Group created
   if (detail.type === 'create') {
     if (fromYou) {
       return renderString('GroupV2--create--you', i18n);
@@ -66,6 +149,9 @@ export function renderChangeDetail(
     }
     return renderString('GroupV2--create--unknown', i18n);
   }
+  */
+
+  // Group title changed
   if (detail.type === 'title') {
     const { newTitle } = detail;
 
@@ -91,6 +177,8 @@ export function renderChangeDetail(
     }
     return renderString('GroupV2--title--remove--unknown', i18n);
   }
+
+  // Group avatar removed or changed
   if (detail.type === 'avatar') {
     if (detail.removed) {
       if (fromYou) {
@@ -113,6 +201,8 @@ export function renderChangeDetail(
     }
     return renderString('GroupV2--avatar--change--unknown', i18n);
   }
+
+  // Group access attributes 
   if (detail.type === 'access-attributes') {
     const { newPrivilege } = detail;
 
@@ -141,6 +231,8 @@ export function renderChangeDetail(
     throw new Error(
       `access-attributes change type, privilege ${newPrivilege} is unknown`
     );
+
+  // 
   } else if (detail.type === 'access-members') {
     const { newPrivilege } = detail;
 
@@ -169,6 +261,8 @@ export function renderChangeDetail(
     throw new Error(
       `access-members change type, privilege ${newPrivilege} is unknown`
     );
+
+  // Group Member added
   } else if (detail.type === 'member-add') {
     const { conversationId } = detail;
     const weAreJoiner = conversationId === ourConversationId;
@@ -198,6 +292,8 @@ export function renderChangeDetail(
     return renderString('GroupV2--member-add--other--unknown', i18n, [
       renderContact(conversationId),
     ]);
+
+  // Group member added from invite
   } else if (detail.type === 'member-add-from-invite') {
     const { conversationId, inviter } = detail;
     const weAreJoiner = conversationId === ourConversationId;
@@ -259,6 +355,8 @@ export function renderChangeDetail(
         inviteeName: renderContact(conversationId),
       }
     );
+  
+  // Group member removed
   } else if (detail.type === 'member-remove') {
     const { conversationId } = detail;
     const weAreLeaver = conversationId === ourConversationId;
@@ -294,6 +392,8 @@ export function renderChangeDetail(
     return renderString('GroupV2--member-remove--other--unknown', i18n, [
       renderContact(conversationId),
     ]);
+
+  // Group promoted member privilege
   } else if (detail.type === 'member-privilege') {
     const { conversationId, newPrivilege } = detail;
     const weAreMember = conversationId === ourConversationId;
@@ -378,6 +478,8 @@ export function renderChangeDetail(
     throw new Error(
       `member-privilege change type, privilege ${newPrivilege} is unknown`
     );
+
+  // Group added one pending 
   } else if (detail.type === 'pending-add-one') {
     const { conversationId } = detail;
     const weAreInvited = conversationId === ourConversationId;
@@ -400,6 +502,8 @@ export function renderChangeDetail(
       ]);
     }
     return renderString('GroupV2--pending-add--one--other--unknown', i18n);
+
+  // Group added many pending
   } else if (detail.type === 'pending-add-many') {
     const { count } = detail;
 
@@ -417,6 +521,8 @@ export function renderChangeDetail(
     return renderString('GroupV2--pending-add--many--unknown', i18n, [
       count.toString(),
     ]);
+
+  // Group removed one pending
   } else if (detail.type === 'pending-remove-one') {
     const { inviter, conversationId } = detail;
     const weAreInviter = Boolean(inviter && inviter === ourConversationId);
@@ -511,6 +617,8 @@ export function renderChangeDetail(
       ]);
     }
     return renderString('GroupV2--pending-remove--revoke--one--unknown', i18n);
+  
+  // Group removed many pending
   } else if (detail.type === 'pending-remove-many') {
     const { count, inviter } = detail;
     const weAreInviter = Boolean(inviter && inviter === ourConversationId);
@@ -590,6 +698,8 @@ export function renderChangeDetail(
       i18n,
       [count.toString()]
     );
+
+  // default case
   } else {
     throw missingCaseError(detail);
   }
