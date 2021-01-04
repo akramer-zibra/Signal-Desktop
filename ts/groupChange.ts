@@ -69,9 +69,14 @@ class RenderResolver {
 
   /** Resolves function call by given detail and context arguments */
   public resolve(detail: GroupV2ChangeDetailType,
-                 from: string|undefined,
-                 ourConversationId: string,
-                 AccessControlEnum: typeof AccessControlClass.AccessRequired) {
+                 options: RenderOptionsType) {
+
+    // Parameter extraction
+    const {
+      from,
+      ourConversationId,
+      AccessControlEnum,
+    } = options;
 
     // Helper variable
     const fromYou = Boolean(from && from === ourConversationId);
@@ -217,7 +222,7 @@ export function renderChangeDetail(
 
   // Try to resolve a render function and return call result
   try {
-    return resolver.resolve(detail, from, ourConversationId, AccessControlEnum);
+    return resolver.resolve(detail, options);
   } catch(err) {
     // Dont care and go on..
   }
