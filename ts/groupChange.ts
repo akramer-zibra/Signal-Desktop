@@ -7,7 +7,13 @@ import { ReplacementValuesType } from './types/I18N';
 import { missingCaseError } from './util/missingCaseError';
 
 import { AccessControlClass, MemberClass } from './textsecure.d';
-import {GroupV2AvatarChangeType, GroupV2ChangeDetailType, GroupV2ChangeType, GroupV2TitleChangeType} from './groups';
+import {
+  GroupV2AccessAttributesChangeType,
+  GroupV2AvatarChangeType,
+  GroupV2ChangeDetailType,
+  GroupV2ChangeType,
+  GroupV2TitleChangeType,
+} from './groups';
 
 export type SmartContactRendererType = (conversationId: string) => FullJSXType;
 export type StringRendererType = (
@@ -64,7 +70,8 @@ class RenderResolver {
   /** Resolves function call by given detail and context arguments */
   public resolve(detail: GroupV2ChangeDetailType,
                  from: string|undefined,
-                 ourConversationId: string) {
+                 ourConversationId: string,
+                 AccessControlEnum: typeof AccessControlClass.AccessRequired) {
 
     // Helper variable
     const fromYou = Boolean(from && from === ourConversationId);
@@ -73,6 +80,7 @@ class RenderResolver {
     if(detail.type === 'create') { return this.groupCreated(from, fromYou); }
     if(detail.type === 'title') { return this.groupTitleChanged(detail, from, fromYou); }
     if(detail.type === 'avatar') { return this.groupAvatarChanged(detail, from, fromYou)}
+    if(detail.type === 'access-attributes') { return this.groupAccessAttributesChanged(detail, from, fromYou, AccessControlEnum); }
 
     // Else throw an error
     throw new Error('Cannot resolve this')
@@ -157,6 +165,36 @@ class RenderResolver {
     // Call render function and return rendered JSX
     return this.renderString(`GroupV2--avatar--${mode}--${suffix}`, this.i18n, components);
   }
+
+  /** Call access attributes changed renderer function */
+  protected groupAccessAttributesChanged(detail: GroupV2AccessAttributesChangeType,
+                                         from: string|undefined,
+                                         fromYou: boolean,
+                                         AccessControlEnum: typeof AccessControlClass.AccessRequired) {
+    //
+    const { newPrivilege } = detail;
+
+    // Resolve from suffix
+    let suffix = 'unknown';
+    if(fromYou) {
+      suffix = 'you';
+    } else if(from) {
+      suffix = 'other';
+    }
+
+    // Resolve mode
+    let mode;
+    if(newPrivilege === AccessControlEnum.ADMINISTRATOR) {
+      mode = 'admins';
+    } else if (newPrivilege === AccessControlEnum.MEMBER) {
+      mode = 'all';
+    } else {
+      throw new Error(`access-attributes change type, privilege ${newPrivilege} is unknown`);
+    }
+
+    //
+    return this.renderString(`GroupV2--access-attributes--${mode}--${suffix}`, this.i18n);
+  }
 }
 
 export function renderChangeDetail(
@@ -179,7 +217,7 @@ export function renderChangeDetail(
 
   // Try to resolve a render function and return call result
   try {
-    return resolver.resolve(detail, from, ourConversationId);
+    return resolver.resolve(detail, from, ourConversationId, AccessControlEnum);
   } catch(err) {
     // Dont care and go on..
   }
@@ -254,6 +292,7 @@ export function renderChangeDetail(
   }
   */
 
+  /*
   // Group access attributes 
   if (detail.type === 'access-attributes') {
     const { newPrivilege } = detail;
@@ -283,9 +322,11 @@ export function renderChangeDetail(
     throw new Error(
       `access-attributes change type, privilege ${newPrivilege} is unknown`
     );
+  }
+  */
 
   // 
-  } else if (detail.type === 'access-members') {
+  if (detail.type === 'access-members') {
     const { newPrivilege } = detail;
 
     if (newPrivilege === AccessControlEnum.ADMINISTRATOR) {
