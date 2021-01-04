@@ -7,7 +7,7 @@ import { ReplacementValuesType } from './types/I18N';
 import { missingCaseError } from './util/missingCaseError';
 
 import { AccessControlClass, MemberClass } from './textsecure.d';
-import { GroupV2ChangeDetailType, GroupV2ChangeType, GroupV2TitleChangeType } from './groups';
+import {GroupV2AvatarChangeType, GroupV2ChangeDetailType, GroupV2ChangeType, GroupV2TitleChangeType} from './groups';
 
 export type SmartContactRendererType = (conversationId: string) => FullJSXType;
 export type StringRendererType = (
@@ -72,6 +72,7 @@ class RenderResolver {
     // 
     if(detail.type === 'create') { return this.groupCreated(from, fromYou); }
     if(detail.type === 'title') { return this.groupTitleChanged(detail, from, fromYou); }
+    if(detail.type === 'avatar') { return this.groupAvatarChanged(detail, from, fromYou)}
 
     // Else throw an error
     throw new Error('Cannot resolve this')
@@ -132,8 +133,31 @@ class RenderResolver {
     // Call render function and return rendered JSX
     return this.renderString(`GroupV2--title--${mode}--${suffix}`, this.i18n, components);
   }
-}
 
+  /** Call group avatar changed renderer function */
+  protected groupAvatarChanged(detail: GroupV2AvatarChangeType, from: string|undefined, fromYou: boolean) {
+
+    // Resolve from suffix
+    let suffix = 'unknown';
+    if(fromYou) {
+      suffix = 'you';
+    } else if(from) {
+      suffix = 'other';
+    }
+
+    // Resolve mode
+    const mode = (detail.removed) ? 'remove' : 'change';
+
+    // Resolve optional components
+    let components;
+    if(from) {
+      components = [this.renderContact(from)]
+    }
+
+    // Call render function and return rendered JSX
+    return this.renderString(`GroupV2--avatar--${mode}--${suffix}`, this.i18n, components);
+  }
+}
 
 export function renderChangeDetail(
   detail: GroupV2ChangeDetailType,
@@ -204,6 +228,7 @@ export function renderChangeDetail(
   }
   */
 
+  /*
   // Group avatar removed or changed
   if (detail.type === 'avatar') {
     if (detail.removed) {
@@ -227,6 +252,7 @@ export function renderChangeDetail(
     }
     return renderString('GroupV2--avatar--change--unknown', i18n);
   }
+  */
 
   // Group access attributes 
   if (detail.type === 'access-attributes') {
