@@ -8,7 +8,7 @@ import { missingCaseError } from './util/missingCaseError';
 
 import { AccessControlClass, MemberClass } from './textsecure.d';
 import {
-  GroupV2AccessAttributesChangeType,
+  GroupV2AccessAttributesChangeType, GroupV2AccessMembersChangeType,
   GroupV2AvatarChangeType,
   GroupV2ChangeDetailType,
   GroupV2ChangeType,
@@ -86,6 +86,7 @@ class RenderResolver {
     if(detail.type === 'title') { return this.groupTitleChanged(detail, from, fromYou); }
     if(detail.type === 'avatar') { return this.groupAvatarChanged(detail, from, fromYou)}
     if(detail.type === 'access-attributes') { return this.groupAccessAttributesChanged(detail, from, fromYou, AccessControlEnum); }
+    if(detail.type === 'access-members') { return this.groupAccessMembersChanged(detail, from, fromYou, AccessControlEnum); }
 
     // Else throw an error
     throw new Error('Cannot resolve this')
@@ -197,8 +198,46 @@ class RenderResolver {
       throw new Error(`access-attributes change type, privilege ${newPrivilege} is unknown`);
     }
 
+    // TODO optional components missing
+
     //
     return this.renderString(`GroupV2--access-attributes--${mode}--${suffix}`, this.i18n);
+  }
+
+  /** Call access members changed renderer function */
+  protected groupAccessMembersChanged(detail: GroupV2AccessMembersChangeType,
+                                      from: string|undefined,
+                                      fromYou: boolean,
+                                      AccessControlEnum: typeof AccessControlClass.AccessRequired) {
+
+    const { newPrivilege } = detail;
+
+    // Resolve from suffix
+    let suffix = 'unknown';
+    if(fromYou) {
+      suffix = 'you';
+    } else if(from) {
+      suffix = 'other';
+    }
+
+    // Resolve mode
+    let mode;
+    if(newPrivilege === AccessControlEnum.ADMINISTRATOR) {
+      mode = 'admins';
+    } else if (newPrivilege === AccessControlEnum.MEMBER) {
+      mode = 'all';
+    } else {
+      throw new Error(`access-members change type, privilege ${newPrivilege} is unknown`);
+    }
+
+    // Resolve optional components
+    let components;
+    if(from) {
+      components = [this.renderContact(from)]
+    }
+
+    // Call renderer function and return rendered JSX
+    return this.renderString(`GroupV2--access-members--${mode}--${suffix}`, this.i18n, components);
   }
 }
 
@@ -207,7 +246,6 @@ export function renderChangeDetail(
   options: RenderOptionsType
 ): FullJSXType {
   const {
-    AccessControlEnum,
     from,
     i18n,
     ourConversationId,
@@ -330,7 +368,8 @@ export function renderChangeDetail(
   }
   */
 
-  // 
+  /*
+  // Group access members
   if (detail.type === 'access-members') {
     const { newPrivilege } = detail;
 
@@ -359,9 +398,11 @@ export function renderChangeDetail(
     throw new Error(
       `access-members change type, privilege ${newPrivilege} is unknown`
     );
+  }
+  */
 
   // Group Member added
-  } else if (detail.type === 'member-add') {
+  if (detail.type === 'member-add') {
     const { conversationId } = detail;
     const weAreJoiner = conversationId === ourConversationId;
 
