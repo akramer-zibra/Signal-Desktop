@@ -41,18 +41,20 @@ export function renderChange(
 }
 
 /**
- * This class resolves given context and parameters to a certain template function call with 
- * additional components
+ * This class resolves given context and parameters to a certain template function call
+ * with additional components
  */
 class RenderResolver {
 
-  private renderString: Function;
-  private renderContact: Function;
+  private renderString: StringRendererType;
+
+  private renderContact: SmartContactRendererType;
+
   private i18n: LocalizerType;
 
   /** Constructor */
-  constructor(renderString: Function, 
-              renderContact: Function,
+  constructor(renderString: StringRendererType,
+              renderContact: SmartContactRendererType,
               i18n: LocalizerType) {
     this.renderString = renderString;
     this.renderContact = renderContact;
@@ -68,18 +70,18 @@ class RenderResolver {
     const fromYou = Boolean(from && from === ourConversationId);
 
     // 
-    if(detail.type === "create") { return this.groupCreated(from, fromYou); }
-    if(detail.type === "title") { return this.groupTitleChanged(detail, from, fromYou); }
+    if(detail.type === 'create') { return this.groupCreated(from, fromYou); }
+    if(detail.type === 'title') { return this.groupTitleChanged(detail, from, fromYou); }
 
     // Else throw an error
-    throw new Error("Cannot resolve this")
+    throw new Error('Cannot resolve this')
   }
 
   /** Call group created render function */
-  protected groupCreated (from: string|undefined, fromYou: Boolean) {
+  protected groupCreated (from: string|undefined, fromYou: boolean) {
 
     // Resolve id suffix
-    var suffix = 'unknown';
+    let suffix = 'unknown';
     if(fromYou) {
       suffix = 'you';
     } else if(from) {
@@ -87,10 +89,10 @@ class RenderResolver {
     }
 
     // Resolve optional components
-    var components = undefined;
+    let components;
     if(from) {
       components = {
-        memberName: this.renderContact(from)
+        memberName: this.renderContact(from),
       }
     }
 
@@ -99,12 +101,12 @@ class RenderResolver {
   }
 
   /** Call group title changed render function */
-  protected groupTitleChanged (detail: GroupV2TitleChangeType, from: string|undefined, fromYou: Boolean) {
+  protected groupTitleChanged (detail: GroupV2TitleChangeType, from: string|undefined, fromYou: boolean) {
 
     const { newTitle } = detail;
 
     // Resolve from suffix
-    var suffix = 'unknown';
+    let suffix = 'unknown';
     if(fromYou) {
       suffix = 'you';
     } else if(from) {
@@ -112,10 +114,10 @@ class RenderResolver {
     }
 
     // Resolve mode
-    var mode = (newTitle) ? 'change' : 'remove';
+    const mode = (newTitle) ? 'change' : 'remove';
 
     // Resolve optional components
-    var components = undefined;
+    let components;
     if(newTitle) {
       components = [newTitle]
     } else if(newTitle && fromYou) {
@@ -149,7 +151,7 @@ export function renderChangeDetail(
   const fromYou = Boolean(from && from === ourConversationId);
 
   // We use a resolver instance
-  var resolver = new RenderResolver(renderString, renderContact, i18n);
+  const resolver = new RenderResolver(renderString, renderContact, i18n);
 
   // Try to resolve a render function and return call result
   try {
