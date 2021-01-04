@@ -25,6 +25,10 @@ before_cache:
 install:
   - yarn install --frozen-lockfile
 
+before_script:
+  - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16"
+  - sleep 3 # Wait for xvfb restart
+
 script:
   - xvfb-run yarn test-electron
   - xvfb-run yarn test-node
