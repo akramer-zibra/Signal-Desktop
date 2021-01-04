@@ -24,6 +24,8 @@ before_cache:
 
 install:
   - yarn install --frozen-lockfile
+  - yarn grunt
+  - yarn build:webpack
 
 script:
   - yarn test-electron
