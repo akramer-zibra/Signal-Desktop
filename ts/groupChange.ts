@@ -198,10 +198,14 @@ class RenderResolver {
       throw new Error(`access-attributes change type, privilege ${newPrivilege} is unknown`);
     }
 
-    // TODO optional components missing
+    // Resolve optional components
+    let components;
+    if(from) {
+      components = [this.renderContact(from)]
+    }
 
-    //
-    return this.renderString(`GroupV2--access-attributes--${mode}--${suffix}`, this.i18n);
+    // Call renderer function and return rendered JSX
+    return this.renderString(`GroupV2--access-attributes--${mode}--${suffix}`, this.i18n, components);
   }
 
   /** Call access members changed renderer function */
