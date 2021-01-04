@@ -11,7 +11,7 @@ import {
   GroupV2AccessAttributesChangeType, GroupV2AccessMembersChangeType,
   GroupV2AvatarChangeType,
   GroupV2ChangeDetailType,
-  GroupV2ChangeType,
+  GroupV2ChangeType, GroupV2MemberAddChangeType,
   GroupV2TitleChangeType,
 } from './groups';
 
@@ -87,6 +87,7 @@ class RenderResolver {
     if(detail.type === 'avatar') { return this.groupAvatarChanged(detail, from, fromYou)}
     if(detail.type === 'access-attributes') { return this.groupAccessAttributesChanged(detail, from, fromYou, AccessControlEnum); }
     if(detail.type === 'access-members') { return this.groupAccessMembersChanged(detail, from, fromYou, AccessControlEnum); }
+    if(detail.type === 'member-add') { return this.groupMemberAdded(detail, from, fromYou, ourConversationId); }
 
     // Else throw an error
     throw new Error('Cannot resolve this')
@@ -242,6 +243,40 @@ class RenderResolver {
 
     // Call renderer function and return rendered JSX
     return this.renderString(`GroupV2--access-members--${mode}--${suffix}`, this.i18n, components);
+  }
+
+  /** Call member added renderer function */
+  protected groupMemberAdded(detail: GroupV2MemberAddChangeType,
+                             from: string|undefined,
+                             fromYou: boolean,
+                             ourConversationId: string) {
+
+    const { conversationId } = detail;
+    const weAreJoiner = conversationId === ourConversationId;
+
+    // Resolve actor
+    let actor = 'unknown';
+    if(fromYou) {
+      actor = 'you';
+    } else if(from) {
+      actor = 'other';
+    }
+
+    // Resolve addee
+    const addee = (weAreJoiner) ? 'you' : 'other';
+
+    // Resolve optional components
+    let components;
+    if (weAreJoiner && from) { components = [this.renderContact(from)]; }
+    if (!weAreJoiner && fromYou) { components = [this.renderContact(conversationId)]; }
+    if (!weAreJoiner && from) {
+      components = {
+        adderName: this.renderContact(from),
+        addeeName: this.renderContact(conversationId)};
+    }
+
+    // Call renderer function and return rendered JSX
+    return this.renderString(`GroupV2--member-add--${addee}--${actor}`, this.i18n, components);
   }
 }
 
@@ -405,6 +440,7 @@ export function renderChangeDetail(
   }
   */
 
+  /*
   // Group Member added
   if (detail.type === 'member-add') {
     const { conversationId } = detail;
@@ -435,9 +471,11 @@ export function renderChangeDetail(
     return renderString('GroupV2--member-add--other--unknown', i18n, [
       renderContact(conversationId),
     ]);
+  }
+  */
 
   // Group member added from invite
-  } else if (detail.type === 'member-add-from-invite') {
+  if (detail.type === 'member-add-from-invite') {
     const { conversationId, inviter } = detail;
     const weAreJoiner = conversationId === ourConversationId;
     const weAreInviter = Boolean(inviter && inviter === ourConversationId);
