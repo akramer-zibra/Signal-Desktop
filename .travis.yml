@@ -28,5 +28,4 @@ install:
   - yarn build:webpack
 
 script:
-  - yarn test-electron
-  - yarn test-node-coverage
+  - yarn ready
