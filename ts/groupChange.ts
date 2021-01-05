@@ -11,7 +11,7 @@ import {
   GroupV2AccessAttributesChangeType, GroupV2AccessMembersChangeType,
   GroupV2AvatarChangeType,
   GroupV2ChangeDetailType,
-  GroupV2ChangeType, GroupV2MemberAddChangeType,
+  GroupV2ChangeType, GroupV2MemberAddChangeType, GroupV2MemberRemoveChangeType,
   GroupV2TitleChangeType,
 } from './groups';
 
@@ -88,6 +88,8 @@ class RenderResolver {
     if(detail.type === 'access-attributes') { return this.groupAccessAttributesChanged(detail, from, fromYou, AccessControlEnum); }
     if(detail.type === 'access-members') { return this.groupAccessMembersChanged(detail, from, fromYou, AccessControlEnum); }
     if(detail.type === 'member-add') { return this.groupMemberAdded(detail, from, fromYou, ourConversationId); }
+    // ..group member invited
+    if (detail.type === 'member-remove') { return this.groupMemberRemoved(detail, from, fromYou, ourConversationId); }
 
     // Else throw an error
     throw new Error('Cannot resolve this')
@@ -277,6 +279,50 @@ class RenderResolver {
 
     // Call renderer function and return rendered JSX
     return this.renderString(`GroupV2--member-add--${addee}--${actor}`, this.i18n, components);
+  }
+
+  /** TODO member invited renderer function */
+
+  /** Call member removed renderer function */
+  protected groupMemberRemoved(detail: GroupV2MemberRemoveChangeType,
+                               from: string|undefined,
+                               fromYou: boolean,
+                               ourConversationId: string) {
+
+    const { conversationId } = detail;
+    const weAreLeaver = conversationId === ourConversationId;
+
+    // Resolve who is acting
+    let actor = 'unknown';
+    if(fromYou) {
+      actor = 'you';
+    } else if(from) {
+      actor = 'other';
+    } else if(from && from === conversationId) {
+      actor = 'self';
+    }
+
+    // Resolve whom is removed
+    let whom = 'you';
+    if(!weAreLeaver) {
+      whom = 'other';
+    }
+
+    // Resolve optional components
+    let components;
+    if(weAreLeaver && from) { components = [this.renderContact(from)]; }
+    if(!weAreLeaver) { components = [this.renderContact(conversationId)]; }  // Default case for "we are not leaver"
+    if(!weAreLeaver && fromYou) { components = [this.renderContact(conversationId)]; }
+    if(!weAreLeaver && from && from === conversationId) { components = [this.renderContact(from)]; }
+    if(!weAreLeaver && from) {
+      components = {
+        adminName: this.renderContact(from),
+        memberName: this.renderContact(conversationId),
+      }
+    }
+
+    // Call renderer function and return rendered JSX
+    return this.renderString(`GroupV2--member-remove--${whom}--${actor}`, this.i18n, components);
   }
 }
 
@@ -536,7 +582,8 @@ export function renderChangeDetail(
         inviteeName: renderContact(conversationId),
       }
     );
-  
+
+  /*
   // Group member removed
   } else if (detail.type === 'member-remove') {
     const { conversationId } = detail;
@@ -573,6 +620,7 @@ export function renderChangeDetail(
     return renderString('GroupV2--member-remove--other--unknown', i18n, [
       renderContact(conversationId),
     ]);
+  */
 
   // Group promoted member privilege
   } else if (detail.type === 'member-privilege') {
