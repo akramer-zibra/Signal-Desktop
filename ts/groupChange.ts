@@ -7,7 +7,13 @@ import { ReplacementValuesType } from './types/I18N';
 import { missingCaseError } from './util/missingCaseError';
 
 import { AccessControlClass, MemberClass } from './textsecure.d';
-import { GroupV2ChangeDetailType, GroupV2ChangeType } from './groups';
+import {
+  GroupV2AccessAttributesChangeType, GroupV2AccessMembersChangeType,
+  GroupV2AvatarChangeType,
+  GroupV2ChangeDetailType,
+  GroupV2ChangeType, GroupV2MemberAddChangeType, GroupV2MemberRemoveChangeType,
+  GroupV2TitleChangeType,
+} from './groups';
 
 export type SmartContactRendererType = (conversationId: string) => FullJSXType;
 export type StringRendererType = (
@@ -40,12 +46,291 @@ export function renderChange(
   );
 }
 
+/**
+ * This class resolves given context and parameters to a certain template function call
+ * with additional components
+ */
+class RenderResolver {
+
+  private renderString: StringRendererType;
+
+  private renderContact: SmartContactRendererType;
+
+  private i18n: LocalizerType;
+
+  /** Constructor */
+  constructor(renderString: StringRendererType,
+              renderContact: SmartContactRendererType,
+              i18n: LocalizerType) {
+    this.renderString = renderString;
+    this.renderContact = renderContact;
+    this.i18n = i18n;
+  } 
+
+  /** Resolves function call by given detail and context arguments */
+  public resolve(detail: GroupV2ChangeDetailType,
+                 options: RenderOptionsType) {
+
+    // Parameter extraction
+    const {
+      from,
+      ourConversationId,
+      AccessControlEnum,
+    } = options;
+
+    // Helper variable
+    const fromYou = Boolean(from && from === ourConversationId);
+
+    // 
+    if(detail.type === 'create') { return this.groupCreated(from, fromYou); }
+    if(detail.type === 'title') { return this.groupTitleChanged(detail, from, fromYou); }
+    if(detail.type === 'avatar') { return this.groupAvatarChanged(detail, from, fromYou)}
+    if(detail.type === 'access-attributes') { return this.groupAccessAttributesChanged(detail, from, fromYou, AccessControlEnum); }
+    if(detail.type === 'access-members') { return this.groupAccessMembersChanged(detail, from, fromYou, AccessControlEnum); }
+    if(detail.type === 'member-add') { return this.groupMemberAdded(detail, from, fromYou, ourConversationId); }
+    // ..group member invited
+    if (detail.type === 'member-remove') { return this.groupMemberRemoved(detail, from, fromYou, ourConversationId); }
+
+    // Else throw an error
+    throw new Error('Cannot resolve this')
+  }
+
+  /** Call group created render function */
+  protected groupCreated (from: string|undefined, fromYou: boolean) {
+
+    // Resolve id suffix
+    let suffix = 'unknown';
+    if(fromYou) {
+      suffix = 'you';
+    } else if(from) {
+      suffix = 'other';
+    }
+
+    // Resolve optional components
+    let components;
+    if(from) {
+      components = {
+        memberName: this.renderContact(from),
+      }
+    }
+
+    // Call render string end return rendered JSX
+    return this.renderString(`GroupV2--create--${suffix}`, this.i18n, components);
+  }
+
+  /** Call group title changed render function */
+  protected groupTitleChanged (detail: GroupV2TitleChangeType, from: string|undefined, fromYou: boolean) {
+
+    const { newTitle } = detail;
+
+    // Resolve from suffix
+    let suffix = 'unknown';
+    if(fromYou) {
+      suffix = 'you';
+    } else if(from) {
+      suffix = 'other';
+    }
+
+    // Resolve mode
+    const mode = (newTitle) ? 'change' : 'remove';
+
+    // Resolve optional components
+    let components;
+    if(newTitle) {
+      components = [newTitle]
+    } else if(newTitle && fromYou) {
+      components = [newTitle]      
+    } else if(newTitle && from) {
+      components = {
+        memberName: this.renderContact(from),
+        newTitle,
+      }
+    }
+
+    // Call render function and return rendered JSX
+    return this.renderString(`GroupV2--title--${mode}--${suffix}`, this.i18n, components);
+  }
+
+  /** Call group avatar changed renderer function */
+  protected groupAvatarChanged(detail: GroupV2AvatarChangeType, from: string|undefined, fromYou: boolean) {
+
+    // Resolve from suffix
+    let suffix = 'unknown';
+    if(fromYou) {
+      suffix = 'you';
+    } else if(from) {
+      suffix = 'other';
+    }
+
+    // Resolve mode
+    const mode = (detail.removed) ? 'remove' : 'change';
+
+    // Resolve optional components
+    let components;
+    if(from) {
+      components = [this.renderContact(from)]
+    }
+
+    // Call render function and return rendered JSX
+    return this.renderString(`GroupV2--avatar--${mode}--${suffix}`, this.i18n, components);
+  }
+
+  /** Call access attributes changed renderer function */
+  protected groupAccessAttributesChanged(detail: GroupV2AccessAttributesChangeType,
+                                         from: string|undefined,
+                                         fromYou: boolean,
+                                         AccessControlEnum: typeof AccessControlClass.AccessRequired) {
+    //
+    const { newPrivilege } = detail;
+
+    // Resolve from suffix
+    let suffix = 'unknown';
+    if(fromYou) {
+      suffix = 'you';
+    } else if(from) {
+      suffix = 'other';
+    }
+
+    // Resolve mode
+    let mode;
+    if(newPrivilege === AccessControlEnum.ADMINISTRATOR) {
+      mode = 'admins';
+    } else if (newPrivilege === AccessControlEnum.MEMBER) {
+      mode = 'all';
+    } else {
+      throw new Error(`access-attributes change type, privilege ${newPrivilege} is unknown`);
+    }
+
+    // Resolve optional components
+    let components;
+    if(from) {
+      components = [this.renderContact(from)]
+    }
+
+    // Call renderer function and return rendered JSX
+    return this.renderString(`GroupV2--access-attributes--${mode}--${suffix}`, this.i18n, components);
+  }
+
+  /** Call access members changed renderer function */
+  protected groupAccessMembersChanged(detail: GroupV2AccessMembersChangeType,
+                                      from: string|undefined,
+                                      fromYou: boolean,
+                                      AccessControlEnum: typeof AccessControlClass.AccessRequired) {
+
+    const { newPrivilege } = detail;
+
+    // Resolve from suffix
+    let suffix = 'unknown';
+    if(fromYou) {
+      suffix = 'you';
+    } else if(from) {
+      suffix = 'other';
+    }
+
+    // Resolve mode
+    let mode;
+    if(newPrivilege === AccessControlEnum.ADMINISTRATOR) {
+      mode = 'admins';
+    } else if (newPrivilege === AccessControlEnum.MEMBER) {
+      mode = 'all';
+    } else {
+      throw new Error(`access-members change type, privilege ${newPrivilege} is unknown`);
+    }
+
+    // Resolve optional components
+    let components;
+    if(from) {
+      components = [this.renderContact(from)]
+    }
+
+    // Call renderer function and return rendered JSX
+    return this.renderString(`GroupV2--access-members--${mode}--${suffix}`, this.i18n, components);
+  }
+
+  /** Call member added renderer function */
+  protected groupMemberAdded(detail: GroupV2MemberAddChangeType,
+                             from: string|undefined,
+                             fromYou: boolean,
+                             ourConversationId: string) {
+
+    const { conversationId } = detail;
+    const weAreJoiner = conversationId === ourConversationId;
+
+    // Resolve actor
+    let actor = 'unknown';
+    if(fromYou) {
+      actor = 'you';
+    } else if(from) {
+      actor = 'other';
+    }
+
+    // Resolve addee
+    const addee = (weAreJoiner) ? 'you' : 'other';
+
+    // Resolve optional components
+    let components;
+    if (weAreJoiner && from) { components = [this.renderContact(from)]; }
+    if (!weAreJoiner && fromYou) { components = [this.renderContact(conversationId)]; }
+    if (!weAreJoiner && from) {
+      components = {
+        adderName: this.renderContact(from),
+        addeeName: this.renderContact(conversationId)};
+    }
+
+    // Call renderer function and return rendered JSX
+    return this.renderString(`GroupV2--member-add--${addee}--${actor}`, this.i18n, components);
+  }
+
+  /** TODO member invited renderer function */
+
+  /** Call member removed renderer function */
+  protected groupMemberRemoved(detail: GroupV2MemberRemoveChangeType,
+                               from: string|undefined,
+                               fromYou: boolean,
+                               ourConversationId: string) {
+
+    const { conversationId } = detail;
+    const weAreLeaver = conversationId === ourConversationId;
+
+    // Resolve who is acting
+    let actor = 'unknown';
+    if(fromYou) {
+      actor = 'you';
+    } else if(from) {
+      actor = 'other';
+    } else if(from && from === conversationId) {
+      actor = 'self';
+    }
+
+    // Resolve whom is removed
+    let whom = 'you';
+    if(!weAreLeaver) {
+      whom = 'other';
+    }
+
+    // Resolve optional components
+    let components;
+    if(weAreLeaver && from) { components = [this.renderContact(from)]; }
+    if(!weAreLeaver) { components = [this.renderContact(conversationId)]; }  // Default case for "we are not leaver"
+    if(!weAreLeaver && fromYou) { components = [this.renderContact(conversationId)]; }
+    if(!weAreLeaver && from && from === conversationId) { components = [this.renderContact(from)]; }
+    if(!weAreLeaver && from) {
+      components = {
+        adminName: this.renderContact(from),
+        memberName: this.renderContact(conversationId),
+      }
+    }
+
+    // Call renderer function and return rendered JSX
+    return this.renderString(`GroupV2--member-remove--${whom}--${actor}`, this.i18n, components);
+  }
+}
+
 export function renderChangeDetail(
   detail: GroupV2ChangeDetailType,
   options: RenderOptionsType
 ): FullJSXType {
   const {
-    AccessControlEnum,
     from,
     i18n,
     ourConversationId,
@@ -55,6 +340,18 @@ export function renderChangeDetail(
   } = options;
   const fromYou = Boolean(from && from === ourConversationId);
 
+  // We use a resolver instance
+  const resolver = new RenderResolver(renderString, renderContact, i18n);
+
+  // Try to resolve a render function and return call result
+  try {
+    return resolver.resolve(detail, options);
+  } catch(err) {
+    // Dont care and go on..
+  }
+
+  /*
+  // Group created
   if (detail.type === 'create') {
     if (fromYou) {
       return renderString('GroupV2--create--you', i18n);
@@ -66,6 +363,10 @@ export function renderChangeDetail(
     }
     return renderString('GroupV2--create--unknown', i18n);
   }
+  */
+
+  /*
+  // Group title changed
   if (detail.type === 'title') {
     const { newTitle } = detail;
 
@@ -91,6 +392,10 @@ export function renderChangeDetail(
     }
     return renderString('GroupV2--title--remove--unknown', i18n);
   }
+  */
+
+  /*
+  // Group avatar removed or changed
   if (detail.type === 'avatar') {
     if (detail.removed) {
       if (fromYou) {
@@ -113,6 +418,10 @@ export function renderChangeDetail(
     }
     return renderString('GroupV2--avatar--change--unknown', i18n);
   }
+  */
+
+  /*
+  // Group access attributes 
   if (detail.type === 'access-attributes') {
     const { newPrivilege } = detail;
 
@@ -141,7 +450,12 @@ export function renderChangeDetail(
     throw new Error(
       `access-attributes change type, privilege ${newPrivilege} is unknown`
     );
-  } else if (detail.type === 'access-members') {
+  }
+  */
+
+  /*
+  // Group access members
+  if (detail.type === 'access-members') {
     const { newPrivilege } = detail;
 
     if (newPrivilege === AccessControlEnum.ADMINISTRATOR) {
@@ -169,7 +483,12 @@ export function renderChangeDetail(
     throw new Error(
       `access-members change type, privilege ${newPrivilege} is unknown`
     );
-  } else if (detail.type === 'member-add') {
+  }
+  */
+
+  /*
+  // Group Member added
+  if (detail.type === 'member-add') {
     const { conversationId } = detail;
     const weAreJoiner = conversationId === ourConversationId;
 
@@ -198,7 +517,11 @@ export function renderChangeDetail(
     return renderString('GroupV2--member-add--other--unknown', i18n, [
       renderContact(conversationId),
     ]);
-  } else if (detail.type === 'member-add-from-invite') {
+  }
+  */
+
+  // Group member added from invite
+  if (detail.type === 'member-add-from-invite') {
     const { conversationId, inviter } = detail;
     const weAreJoiner = conversationId === ourConversationId;
     const weAreInviter = Boolean(inviter && inviter === ourConversationId);
@@ -259,6 +582,9 @@ export function renderChangeDetail(
         inviteeName: renderContact(conversationId),
       }
     );
+
+  /*
+  // Group member removed
   } else if (detail.type === 'member-remove') {
     const { conversationId } = detail;
     const weAreLeaver = conversationId === ourConversationId;
@@ -294,6 +620,9 @@ export function renderChangeDetail(
     return renderString('GroupV2--member-remove--other--unknown', i18n, [
       renderContact(conversationId),
     ]);
+  */
+
+  // Group promoted member privilege
   } else if (detail.type === 'member-privilege') {
     const { conversationId, newPrivilege } = detail;
     const weAreMember = conversationId === ourConversationId;
@@ -378,6 +707,8 @@ export function renderChangeDetail(
     throw new Error(
       `member-privilege change type, privilege ${newPrivilege} is unknown`
     );
+
+  // Group added one pending 
   } else if (detail.type === 'pending-add-one') {
     const { conversationId } = detail;
     const weAreInvited = conversationId === ourConversationId;
@@ -400,6 +731,8 @@ export function renderChangeDetail(
       ]);
     }
     return renderString('GroupV2--pending-add--one--other--unknown', i18n);
+
+  // Group added many pending
   } else if (detail.type === 'pending-add-many') {
     const { count } = detail;
 
@@ -417,6 +750,8 @@ export function renderChangeDetail(
     return renderString('GroupV2--pending-add--many--unknown', i18n, [
       count.toString(),
     ]);
+
+  // Group removed one pending
   } else if (detail.type === 'pending-remove-one') {
     const { inviter, conversationId } = detail;
     const weAreInviter = Boolean(inviter && inviter === ourConversationId);
@@ -511,6 +846,8 @@ export function renderChangeDetail(
       ]);
     }
     return renderString('GroupV2--pending-remove--revoke--one--unknown', i18n);
+  
+  // Group removed many pending
   } else if (detail.type === 'pending-remove-many') {
     const { count, inviter } = detail;
     const weAreInviter = Boolean(inviter && inviter === ourConversationId);
@@ -590,7 +927,9 @@ export function renderChangeDetail(
       i18n,
       [count.toString()]
     );
+
+  // default case
   } else {
-    throw missingCaseError(detail);
+    throw missingCaseError(<never>detail);
   }
 }
