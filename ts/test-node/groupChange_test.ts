@@ -44,18 +44,10 @@ describe('changeGroup tests', () => {
     // We use one sandbox for our spies
     const sandbox = sinon.createSandbox();
 
-    // We define variables for our spies
-    let renderStringSpy: any;
-    let renderContactSpy: any;
-    let i18nSpy: any;
-
-    beforeEach(() => {
-
-        // Create spies
-        renderStringSpy = sinon.spy();
-        renderContactSpy = sinon.spy();
-        i18nSpy = sinon.spy();
-    });
+    // We define test spies
+    const renderStringSpy: any = sandbox.spy();
+    const renderContactSpy: any = sandbox.spy();
+    const i18nSpy: any = sandbox.spy();
 
     afterEach(() => {
         sandbox.restore();
