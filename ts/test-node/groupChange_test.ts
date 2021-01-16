@@ -1,12 +1,10 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { assert } from 'chai';
 import sinon from 'sinon';
 import {renderChangeDetail, RenderOptionsType, SmartContactRendererType, StringRendererType} from '../groupChange';
 import {GroupV2ChangeDetailType} from '../groups';
 import {LocalizerType} from '../types/Util';
-// eslint-disable-next-line import/named
 import {AccessControlClass, MemberClass} from '../textsecure';
 
 /*
@@ -73,8 +71,8 @@ describe('changeGroup tests', () => {
         renderChangeDetail(detail, options)
 
         // Verify both spies renderString and renderContact
-        assert.isTrue(renderStringSpy.called);
-        assert.equal(renderStringSpy.getCall(0).args[0], 'GroupV2--create--you');
+        sinon.assert.called(renderStringSpy);
+        sinon.assert.calledWith(renderStringSpy, 'GroupV2--create--you');
     });
 
     it('with detail.type = create AND not from you', () => {
@@ -97,12 +95,12 @@ describe('changeGroup tests', () => {
         renderChangeDetail(detail, options)
 
         // Check render string spy call
-        assert.isTrue(renderStringSpy.called);
-        assert.equal(renderStringSpy.getCall(0).args[0], 'GroupV2--create--other');
-        assert.containsAllKeys(renderStringSpy.getCall(0).args[2], ['memberName'])
+        sinon.assert.called(renderStringSpy);
+        sinon.assert.calledWith(renderStringSpy, 'GroupV2--create--other');
+        sinon.assert.calledWithMatch(renderStringSpy, sinon.match.has('memberName'))
 
         // Check render contact call
-        assert.isTrue(renderContactSpy.called)
-        assert.isTrue(renderContactSpy.calledWith(options.from))
+        sinon.assert.called(renderContactSpy);
+        sinon.assert.calledWith(renderContactSpy, options.from);
     });
 });
