@@ -41,48 +41,51 @@ const runs: [ChangeRenderDetailTestSpec] = [{
 /* */
 describe('changeGroup tests', () => {
 
-    before(function () {
-        // Spies resetten?
-        // TODO
-    });
+    // We use one sandbox for our spies
+    const sandbox = sinon.createSandbox();
 
-//    runs.forEach(function (run) {
-        it('with detail.type = create AND from you', () => {
+    // We define variables for our spies
+    let renderStringSpy: any;
+    let renderContactSpy: any;
+    let i18nSpy: any;
 
-            // Create spies
-            const renderStringSpy = sinon.spy();
-            const renderContactSpy = sinon.spy();
-            const i18nSpy = sinon.spy();
-
-            // Test input
-            const detail: GroupV2ChangeDetailType = {
-                type: 'create',
-            }
-            const options: RenderOptionsType = {
-                from: 'FROM',
-                ourConversationId: 'FROM',
-                renderString: <StringRendererType>renderStringSpy,
-                renderContact: <SmartContactRendererType>renderContactSpy,
-                i18n: <LocalizerType>i18nSpy,
-                AccessControlEnum: AccessControlClass.AccessRequired,
-                RoleEnum: MemberClass.Role,
-            }
-
-            // Call method under test
-            renderChangeDetail(detail, options)
-
-            // Verify both spies renderString and renderContact
-            assert.isTrue(renderStringSpy.called);
-            assert.equal(renderStringSpy.getCall(0).args[0], 'GroupV2--create--you');
-        });
-//    });
-
-    it('with detail.type = create AND not from you', () => {
+    beforeEach(() => {
 
         // Create spies
-        const renderStringSpy = sinon.spy();
-        const renderContactSpy = sinon.spy();
-        const i18nSpy = sinon.spy();
+        renderStringSpy = sinon.spy();
+        renderContactSpy = sinon.spy();
+        i18nSpy = sinon.spy();
+    });
+
+    afterEach(() => {
+        sandbox.restore();
+    })
+
+    it('with detail.type = create AND from you', () => {
+
+        // Test input
+        const detail: GroupV2ChangeDetailType = {
+            type: 'create',
+        }
+        const options: RenderOptionsType = {
+            from: 'FROM',
+            ourConversationId: 'FROM',
+            renderString: <StringRendererType>renderStringSpy,
+            renderContact: <SmartContactRendererType>renderContactSpy,
+            i18n: <LocalizerType>i18nSpy,
+            AccessControlEnum: AccessControlClass.AccessRequired,
+            RoleEnum: MemberClass.Role,
+        }
+
+        // Call method under test
+        renderChangeDetail(detail, options)
+
+        // Verify both spies renderString and renderContact
+        assert.isTrue(renderStringSpy.called);
+        assert.equal(renderStringSpy.getCall(0).args[0], 'GroupV2--create--you');
+    });
+
+    it('with detail.type = create AND not from you', () => {
 
         // Test input
         const detail: GroupV2ChangeDetailType = {
