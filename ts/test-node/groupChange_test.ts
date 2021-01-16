@@ -39,7 +39,7 @@ const runs: [ChangeRenderDetailTestSpec] = [{
 */
 
 /* */
-describe('changeGroup tests', function () {
+describe('changeGroup tests', () => {
 
     before(function () {
         // Spies resetten?
@@ -47,7 +47,7 @@ describe('changeGroup tests', function () {
     });
 
 //    runs.forEach(function (run) {
-        it('with detail.type = create', () => {
+        it('with detail.type = create AND from you', () => {
 
             // Create spies
             const renderStringSpy = sinon.spy();
@@ -76,4 +76,38 @@ describe('changeGroup tests', function () {
             assert.equal(renderStringSpy.getCall(0).args[0], 'GroupV2--create--you');
         });
 //    });
+
+    it('with detail.type = create AND not from you', () => {
+
+        // Create spies
+        const renderStringSpy = sinon.spy();
+        const renderContactSpy = sinon.spy();
+        const i18nSpy = sinon.spy();
+
+        // Test input
+        const detail: GroupV2ChangeDetailType = {
+            type: 'create',
+        }
+        const options: RenderOptionsType = {
+            from: 'FROM',
+            ourConversationId: 'OTHER',
+            renderString: <StringRendererType>renderStringSpy,
+            renderContact: <SmartContactRendererType>renderContactSpy,
+            i18n: <LocalizerType>i18nSpy,
+            AccessControlEnum: AccessControlClass.AccessRequired,
+            RoleEnum: MemberClass.Role,
+        }
+
+        // Call method under test
+        renderChangeDetail(detail, options)
+
+        // Check render string spy call
+        assert.isTrue(renderStringSpy.called);
+        assert.equal(renderStringSpy.getCall(0).args[0], 'GroupV2--create--other');
+        assert.containsAllKeys(renderStringSpy.getCall(0).args[2], ['memberName'])
+
+        // Check render contact call
+        assert.isTrue(renderContactSpy.called)
+        assert.isTrue(renderContactSpy.calledWith(options.from))
+    });
 });
