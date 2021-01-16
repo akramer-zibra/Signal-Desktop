@@ -28,4 +28,4 @@ install:
   - yarn build:webpack
 
 script:
-  - yarn ready --verbose
+  - yarn --verbose ready
