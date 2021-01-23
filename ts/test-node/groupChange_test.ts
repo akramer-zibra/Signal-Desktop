@@ -116,8 +116,7 @@ describe('changeGroup tests', () => {
 
         // Check render string spy call
         sinon.assert.called(renderStringSpy);
-        sinon.assert.calledWith(renderStringSpy, 'GroupV2--create--other');
-        sinon.assert.calledWithMatch(renderStringSpy, sinon.match.has('memberName'))
+        sinon.assert.calledWithMatch(renderStringSpy, sinon.match('GroupV2--create--other'), sinon.match(i18nSpy), sinon.match.has('memberName'));
 
         // Check render contact call
         sinon.assert.called(renderContactSpy);
