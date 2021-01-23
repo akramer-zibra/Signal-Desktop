@@ -1,13 +1,11 @@
 // Copyright 2020 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// import sinon from 'sinon';
-import {assert} from 'chai';
-// import {renderChangeDetail, RenderOptionsType, SmartContactRendererType,
-// StringRendererType} from '../groupChange';
-// import {GroupV2ChangeDetailType} from '../groups';
-// import {LocalizerType} from '../types/Util';
-// import {AccessControlClass, MemberClass} from '../textsecure';
+// eslint-disable-next-line max-classes-per-file
+import sinon from 'sinon';
+import {renderChangeDetail, RenderOptionsType, SmartContactRendererType, StringRendererType} from '../groupChange';
+import {GroupV2ChangeDetailType} from '../groups';
+import {LocalizerType} from '../types/Util';
 
 /*
 type ChangeRenderDetailTestSpec = {
@@ -38,14 +36,27 @@ const runs: [ChangeRenderDetailTestSpec] = [{
 }];
 */
 
-describe('Does...', () => {
-    it('it work?', () => {
-        assert.isTrue(true);
-    })
-})
+// DANGER those are inline classes of GroupV2Change.stories.tsx
+class AccessControlEnum {
+    static UNKNOWN = 0;
+
+    static ADMINISTRATOR = 1;
+
+    static ANY = 2;
+
+    static MEMBER = 3;
+}
+
+class RoleEnum {
+    static UNKNOWN = 0;
+
+    static ADMINISTRATOR = 1;
+
+    static DEFAULT = 2;
+}
+// DANGER end
 
 /* */
-/*
 describe('changeGroup tests', () => {
 
     // We use one sandbox for our spies
@@ -72,8 +83,8 @@ describe('changeGroup tests', () => {
             renderString: <StringRendererType>renderStringSpy,
             renderContact: <SmartContactRendererType>renderContactSpy,
             i18n: <LocalizerType>i18nSpy,
-            AccessControlEnum: AccessControlClass.AccessRequired,
-            RoleEnum: MemberClass.Role,
+            AccessControlEnum,
+            RoleEnum,
         }
 
         // Call method under test
@@ -96,8 +107,8 @@ describe('changeGroup tests', () => {
             renderString: <StringRendererType>renderStringSpy,
             renderContact: <SmartContactRendererType>renderContactSpy,
             i18n: <LocalizerType>i18nSpy,
-            AccessControlEnum: AccessControlClass.AccessRequired,
-            RoleEnum: MemberClass.Role,
+            AccessControlEnum,
+            RoleEnum,
         }
 
         // Call method under test
@@ -113,4 +124,3 @@ describe('changeGroup tests', () => {
         sinon.assert.calledWith(renderContactSpy, options.from);
     });
 });
-*/
