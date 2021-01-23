@@ -28,4 +28,4 @@ install:
   - yarn build:webpack
 
 script:
-  - yarn --verbose test-electron
+  - yarn ready
